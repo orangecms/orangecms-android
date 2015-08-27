@@ -13,10 +13,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
+import android.webkit.URLUtil;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -33,6 +35,7 @@ import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.UnknownHostException;
 
 
 /**
@@ -115,7 +118,7 @@ public class LoginActivity extends Activity {
 
 
         // Check for a valid endpoint.
-        if (TextUtils.isEmpty(endpointUrl) && !isEndpointValid(endpointUrl)) {
+        if (TextUtils.isEmpty(endpointUrl) || !isEndpointValid(endpointUrl)) {
             mEndpointUrlView.setError(getString(R.string.error_invalid_endpoint));
             focusView = mEndpointUrlView;
             cancel = true;
@@ -153,8 +156,9 @@ public class LoginActivity extends Activity {
     }
 
     private boolean isEndpointValid(String endpointUrl) {
-        //TODO: Replace this with your own logic
-        return true;
+        // only takes URLs which will not throw a MalformulatedUrlException
+        // TODO is this enough for a check?
+        return URLUtil.isHttpUrl(endpointUrl) && Patterns.WEB_URL.matcher(endpointUrl).matches();
     }
 
     private boolean isUsernameValid(String username) {
@@ -212,6 +216,9 @@ public class LoginActivity extends Activity {
         private final String mUsername;
         private final String mPassword;
 
+        private int mResponseCode;
+        private Exception mException;
+
         LoginTask(String endpointUrl, String username, String password) {
             mEndpointUrl = endpointUrl;
             mUsername    = username;
@@ -222,6 +229,7 @@ public class LoginActivity extends Activity {
         protected String doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
             String result = "";
+            // could also set this to null and adapt onPostExecute
             if (isNetworkAvailable()) {
                 JSONObject requestJSON = new JSONObject();
                 try {
@@ -256,8 +264,10 @@ public class LoginActivity extends Activity {
                     wr.close();
 
                     Log.d(LOG_TAG, "HTTP status: " + con.getResponseCode());
+                    mResponseCode = con.getResponseCode();
                     result = readStream(con.getInputStream());
                 } catch (Exception e) {
+                    mException = e;
                     e.printStackTrace();
                 }
             }
@@ -270,15 +280,25 @@ public class LoginActivity extends Activity {
             mAuthTask = null;
             showProgress(false);
 
-            if (result != null) {
+            if (!TextUtils.isEmpty(result)) {
+                // result is set to "" in doInBackground and therefore will never be null
                 Toast.makeText(getApplicationContext(), result, Toast.LENGTH_LONG).show();
 
                 Intent intent = new Intent(getApplication(), PostActivity.class);
                 intent.putExtra("endpointUrl", mEndpointUrl);
                 startActivity(intent);
             } else {
-                mPasswordView.setError(getString(R.string.error_incorrect_password));
-                mPasswordView.requestFocus();
+                // try to find out the error type by server response code
+                if (mResponseCode == 401){
+                    mPasswordView.setError(getString(R.string.error_wrong_user_or_password));
+                    mPasswordView.requestFocus();
+                } else if (mResponseCode == 404 || mException != null && mException instanceof UnknownHostException) {
+                    mEndpointUrlView.setError(getString(R.string.error_unknown_endpoint));
+                    mEndpointUrlView.requestFocus();
+                } else { // other error code or exception
+                    mEndpointUrlView.setError(getString(R.string.error_connection));
+                    mEndpointUrlView.requestFocus();
+                }
             }
         }
 
