@@ -202,6 +202,7 @@ public class PostActivity extends Activity {
         protected String doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
             String result = "";
+            // could also set this to null and adapt onPostExecute
 
             if (isNetworkAvailable() && mEndpointUrl != null) {
                 JSONObject post = new JSONObject();
@@ -254,7 +255,8 @@ public class PostActivity extends Activity {
             mPostTask = null;
             showProgress(false);
 
-            if (result != null) {
+            if (!TextUtils.isEmpty(result)) {
+                // result is set to "" in doInBackground and therefore will never be null
                 Toast.makeText(getApplicationContext(), result, Toast.LENGTH_LONG).show();
 //                finish();
             } else {
