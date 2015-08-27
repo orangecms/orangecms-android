@@ -292,7 +292,7 @@ public class LoginActivity extends Activity {
                 if (mResponseCode == 401){
                     mPasswordView.setError(getString(R.string.error_wrong_user_or_password));
                     mPasswordView.requestFocus();
-                } else if (mResponseCode == 404 || mException != null && mException instanceof UnknownHostException) {
+                } else if (mResponseCode == 404 || mException instanceof UnknownHostException) {
                     mEndpointUrlView.setError(getString(R.string.error_unknown_endpoint));
                     mEndpointUrlView.requestFocus();
                 } else { // other error code or exception
