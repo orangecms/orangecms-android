@@ -10,11 +10,14 @@ pesdkConfig {
         // Add all the backend modules you need
         include 'ly.img.android.pesdk.operation:camera'
         include 'ly.img.android.pesdk.operation:focus'
+        include 'ly.img.android.pesdk.operation:brush'
+        include 'ly.img.android.pesdk.operation:overlay'
+        include 'ly.img.android.pesdk.operation:frame'
         include 'ly.img.android.pesdk.operation:text'
 
         // Add all the UI modules you are need
-        include 'ly.img.android.pesdk.ui.mobile_ui:core'
         include 'ly.img.android.pesdk.ui.mobile_ui:camera'
+        include 'ly.img.android.pesdk.ui.mobile_ui:core'
         include 'ly.img.android.pesdk.ui.mobile_ui:focus'
         include 'ly.img.android.pesdk.ui.mobile_ui:text'
 
@@ -41,6 +44,7 @@ android {
     }
 }
 
+// see https://developer.android.com/studio/build/dependencies?utm_source=android-studio#dependency_configurations
 dependencies {
     api fileTree(dir: 'libs', include: ['*.jar'])
     api 'com.android.support:appcompat-v7:27.1.1'
